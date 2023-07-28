@@ -3,7 +3,6 @@ import Editor from './Editor/Editor'
 import Sidebar from './Sidebar/Sidebar'
 import Split from 'react-split'
 import { nanoid } from 'nanoid'
-import { data } from './data'
 import './App.css'
 
 export default function App() {
