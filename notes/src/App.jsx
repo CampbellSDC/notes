@@ -2,15 +2,12 @@ import React from 'react'
 import Editor from './Editor/Editor'
 import Sidebar from './Sidebar/Sidebar'
 import Split from 'react-split'
-import { nanoid } from 'nanoid'
 import './App.css'
-import { onSnapshot } from 'firebase/firestore'
+import { addDoc, onSnapshot} from 'firebase/firestore'
 import { notesCollection } from './firebase'
 
 export default function App() {
-  const [notes, setNotes] = React.useState(
-      () => JSON.parse(localStorage.getItem("notes")) || []
-  )
+  const [notes, setNotes] = React.useState([])
   const [currentNoteId, setCurrentNoteId] = React.useState(
        (notes[0]?.id) || "" //Question mark checks to see if a note is there
   )
@@ -23,18 +20,25 @@ export default function App() {
   React.useEffect(() => {
       const unsubscribe = onSnapshot(notesCollection, function(snapshot){
         // This is where we sync up local notes array with snapshot data
-        console.log("things are changing")
+        // snapshot.docs returns an array, and use the data so our app can make sense of it
+        const notesArr = snapshot.docs.map(doc => ({
+          // The body is the only property we are getting from doc.data, so we get that, and then add the id because all
+          // firestore data has it's own unique id 
+          ...doc.data(),
+          id: doc.id
+        }))
+        setNotes(notesArr)
       })
       return unsubscribe
   }, [])
 
-  function createNewNote() {
+  // When creating new data in firebase, you get a promise in return
+  async function createNewNote() {
       const newNote = {
-          id: nanoid(),
           body: "# Type your markdown note's title here"
       }
-      setNotes(prevNotes => [newNote, ...prevNotes])
-      setCurrentNoteId(newNote.id)
+      const newNoteRef = await addDoc(notesCollection, newNote)
+      setCurrentNoteId(newNoteRef.id)
   }
 
   function updateNote(text) {
