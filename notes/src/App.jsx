@@ -3,27 +3,36 @@ import Editor from './Editor/Editor'
 import Sidebar from './Sidebar/Sidebar'
 import Split from 'react-split'
 import './App.css'
-import { addDoc, deleteDoc, doc, onSnapshot} from 'firebase/firestore'
+import { addDoc, deleteDoc, doc, onSnapshot, setDoc} from 'firebase/firestore'
 import { notesCollection, db } from './firebase'
 
 export default function App() {
   const [notes, setNotes] = React.useState([])
-  const [currentNoteId, setCurrentNoteId] = React.useState(
-       (notes[0]?.id) || "" //Question mark checks to see if a note is there
-  )
+  const [currentNoteId, setCurrentNoteId] = React.useState("")
 
   // This will populate the current note based on the id, so I don't have to call a function twice below
   // This will take it from the notes state
+
   const currentNote = 
   notes.find(note => note.id === currentNoteId) || notes[0]
 
   React.useEffect(() => {
+    if(!currentNoteId){
+      setCurrentNoteId(notes[0]?.id)
+    }
+  }, [notes])
+
+  React.useEffect(() => {
       const unsubscribe = onSnapshot(notesCollection, function(snapshot){
+
         // This is where we sync up local notes array with snapshot data
         // snapshot.docs returns an array, and use the data so our app can make sense of it
+
         const notesArr = snapshot.docs.map(doc => ({
+
           // The body is the only property we are getting from doc.data, so we get that, and then add the id because all
           // firestore data has it's own unique id 
+
           ...doc.data(),
           id: doc.id
         }))
@@ -33,6 +42,7 @@ export default function App() {
   }, [])
 
   // When creating new data in firebase, you get a promise in return
+
   async function createNewNote() {
       const newNote = {
           body: "# Type your markdown note's title here"
@@ -41,23 +51,19 @@ export default function App() {
       setCurrentNoteId(newNoteRef.id)
   }
 
-  function updateNote(text) {
-      setNotes(oldNotes => {
-          const newArray = []
-          for (let i = 0; i < oldNotes.length; i++) {
-              const oldNote = oldNotes[i]
-              if (oldNote.id === currentNoteId) {
-                  // Put the most recently-modified note at the top
-                  newArray.unshift({ ...oldNote, body: text })
-              } else {
-                  newArray.push(oldNote)
-              }
-          }
-          return newArray
-      })
+  // setDoc returns a promise, so this is made an async function
+
+  async function updateNote(text) {
+    const docRef = doc(db, "notes", currentNoteId)
+    await setDoc(docRef, { body: text }, { merge: true } ) //this first parameter is what note data is being referenced to change, and the second is the actual change itself
+    
+    /*  the object {merge: true} will merge this updated note with the original note if it exists and there are
+    more properties to the document that is being referenced to be changed*/
   }
 
  async function deleteNote(noteId) {
+
+  // docRef will be the reference to the single piece of data in the db
       const docRef = doc(db, "notes", noteId)
       await deleteDoc(docRef)
   }
@@ -79,14 +85,11 @@ export default function App() {
                           newNote={createNewNote}
                           deleteNote={deleteNote}
                       />
-                      {
-                          currentNoteId &&
-                          notes.length > 0 &&
-                          <Editor
+                      <Editor
                               currentNote={currentNote}
                               updateNote={updateNote}
                           />
-                      }
+                      
                   </Split>
                   :
                   <div className="no-notes">
