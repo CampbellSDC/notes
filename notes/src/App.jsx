@@ -10,6 +10,8 @@ export default function App() {
   const [notes, setNotes] = React.useState([])
   const [currentNoteId, setCurrentNoteId] = React.useState("")
 
+  const [tempNoteText, setTempNoteText] = React.useState("")
+
   // * Need to set a new array to sort notes based on timestamps
 
   const sortedNotes = notes.sort((a,b) => b.updatedAt - a.updatedAt)
@@ -25,6 +27,15 @@ export default function App() {
       setCurrentNoteId(notes[0]?.id)
     }
   }, [notes])
+
+  //* Using the setTempNoteText to change the data of the note instead
+  //* of making a request each time data changes
+
+  React.useLayoutEffect(() => {
+    if(currentNote){
+      setTempNoteText(currentNote.body)
+    }
+  }, [currentNote])
 
   React.useEffect(() => {
       const unsubscribe = onSnapshot(notesCollection, function(snapshot){
@@ -92,8 +103,8 @@ export default function App() {
                           deleteNote={deleteNote}
                       />
                       <Editor
-                              currentNote={currentNote}
-                              updateNote={updateNote}
+                              tempNoteText={tempNoteText}
+                              setTempNoteText={setTempNoteText}
                           />
                       
                   </Split>
