@@ -28,6 +28,18 @@ export default function App() {
     }
   }, [notes])
 
+
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if(tempNoteText !== currentNote.body){
+        updateNote(tempNoteText)
+      }
+      
+    }, 500)
+    return () => clearTimeout(timeoutId)
+  }, [tempNoteText])
+
+
   //* Using the setTempNoteText to change the data of the note instead
   //* of making a request each time data changes
 
